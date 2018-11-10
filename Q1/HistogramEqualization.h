@@ -16,17 +16,17 @@ public:
 		width = img.width();
 		height = img.height();
 		CImg<unsigned char> grayImg = toGrayImg();
-		grayImg.save("LenaGray.bmp");
+		string filename = "OriginalGrayImg";
+		filename +=  targetName + ".bmp";
+		grayImg.save(filename.c_str());
 		double probabilities[256];
 		countForProbabilities(grayImg, probabilities);
 		int targetGrayValue[256];
 		countForTargetValue(probabilities, targetGrayValue);
-		for(int i = 0; i < 256; i++) {
-			//cout << targetGrayValue[i] << " ";
-		}
 		CImg<unsigned char> targetImg = toTargetImg(grayImg, targetGrayValue);
-		targetImg.display();
-		targetImg.save(targetName.c_str());
+		filename = "GrayHisEq";
+		filename = filename+targetName+".bmp";
+		targetImg.save(filename.c_str());
 	}
 
 	CImg<unsigned char> toGrayImg() {
@@ -83,8 +83,10 @@ public:
 		int targetColorValue[3][256];
 		countForTargetValue(probabilities, targetColorValue);
 		CImg<unsigned char> targetImg = toTargetImg(img, targetColorValue);
-		targetImg.display();
-		targetImg.save(targetName.c_str());
+		//targetImg.display();
+		string filename = "Color";
+		filename = filename + targetName + ".bmp";
+		targetImg.save(filename.c_str());
 	}
 
 
@@ -143,20 +145,19 @@ public:
 		width = img.width();
 		height = img.height();
 		// 将图片从RGB色彩空间转换为HSL色彩空间
-		CImg<double> labImg = RGBtoHSL(img);
-		labImg.display();
+		CImg<double> hslImg = RGBtoHSL(img);
 		double probabilities[3][256];
 		// 计算每个通道各个数值出现的概率
-		countForProbabilities(labImg, probabilities);
+		countForProbabilities(hslImg, probabilities);
 		int targetColorValue[3][256];
 		// 根据累计概率分布计算每个值对应的值
 		countForTargetValue(probabilities, targetColorValue);
-		CImg<unsigned char> targetImg = toTargetImg(labImg, targetColorValue);
-		targetImg.display();
+		CImg<unsigned char> targetImg = toTargetImg(hslImg, targetColorValue);
 		CImg<unsigned char> resultRGB = HSLtoRGB(targetImg);
-		resultRGB.display();
-		string name = targetName + " in HSL.bmp";
-		resultRGB.save(name.c_str());
+		//resultRGB.display();
+		string filename = "HSL";
+		filename = filename + targetName + ".bmp";
+		resultRGB.save(filename.c_str());
 	}
 
 	CImg<unsigned char> RGBtoHSL(const CImg<unsigned char> & inputImg) {
@@ -210,14 +211,10 @@ public:
 					h += 360;
 				}
 			}
-			hsl(x,y,0,0) = (int)(h * 255 / 360);
+			hsl(x,y,0,0) = (int)(cimg::cut(h, 0, 360) * 255 / 360);
 			hsl(x,y,0,1) = (int)(s * 255);
 			hsl(x,y,0,2) = (int)(l * 255);
-			if(hsl(x,y,0,1) == 0) {
-				
-			}
 		}
-		//cout << "-------------" << count << endl;
 		return hsl;
 	}
 
@@ -294,7 +291,6 @@ public:
 				rgbImg(x,y,0,2) = (int)(b * 255);
 			}
 		}
-		//cout << "-------------" << count << endl;
 		return rgbImg;
 	}
 	void countForProbabilities(const CImg<double>& inputImg, double (&probabilities)[3][256]) {
@@ -327,12 +323,11 @@ public:
 	}
 
 	CImg<unsigned char> toTargetImg(const CImg<unsigned char>& inputImg, const int (&targetColorValue)[3][256]) {
-		//cout << "toTargetImg" << endl;
 		CImg<unsigned char> targetImg = CImg<unsigned char>(width, height, 1, 3);
 		cimg_forXY(img, x, y) {
-			targetImg(x,y, 0, 0) = targetColorValue[0][inputImg(x,y,0,0)];
+			targetImg(x,y, 0, 0) = inputImg(x,y,0,0);
 			targetImg(x,y, 0, 1) = targetColorValue[1][inputImg(x,y,0,1)];
-			targetImg(x,y, 0, 2) = inputImg(x,y,0,2);
+			targetImg(x,y, 0, 2) = targetColorValue[2][inputImg(x,y,0,2)];
 		}
 		return targetImg;
 	}
@@ -350,7 +345,6 @@ public:
 		height = img.height();
 		// 将图片从RGB色彩空间转换为HSL色彩空间
 		img.RGBtoYCbCr();
-		img.display();
 		double probabilities[3][256];
 		// 计算每个通道各个数值出现的概率
 		countForProbabilities(img, probabilities);
@@ -359,9 +353,10 @@ public:
 		countForTargetValue(probabilities, targetColorValue);
 		CImg<unsigned char> targetImg = toTargetImg(img, targetColorValue);
 		targetImg.YCbCrtoRGB();
-		targetImg.display();
-		string name = targetName + " in HSL.bmp";
-		targetImg.save(name.c_str());
+		//targetImg.display();
+		string filename = "YCbCr";
+		filename = filename + targetName + ".bmp";
+		targetImg.save(filename.c_str());
 	}
 
 	void countForProbabilities(const CImg<double>& inputImg, double (&probabilities)[3][256]) {
@@ -394,7 +389,6 @@ public:
 	}
 
 	CImg<unsigned char> toTargetImg(const CImg<unsigned char>& inputImg, const int (&targetColorValue)[3][256]) {
-		//cout << "toTargetImg" << endl;
 		CImg<unsigned char> targetImg = CImg<unsigned char>(width, height, 1, 3);
 		cimg_forXY(img, x, y) {
 			targetImg(x,y, 0, 0) = targetColorValue[0][inputImg(x,y,0,0)];

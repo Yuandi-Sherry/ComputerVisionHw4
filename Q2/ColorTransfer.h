@@ -11,36 +11,37 @@ class ColorTransfer {
 	CImg<unsigned char> opeImg; // 待处理图像
 
 public:
-	ColorTransfer(string refFilePath, string opeFilePath) {
+	ColorTransfer(string refFilePath, string opeFilePath, string i) {
 		CImg<unsigned char> temp1(refFilePath.c_str());
 		refImg = temp1;
 		CImg<unsigned char> temp2(opeFilePath.c_str());
 		opeImg = temp2;
 		CImg<double> refLab = RGBtoLab(refImg);
 		CImg<double> opeLab = RGBtoLab(opeImg);
-		opeLab.display();
-		//cout << "debug1" << endl;
 		double refMean[3], refStdVar[3], opeMean[3], opeStdVar[3];
 		calculateMeanAndStdV(refLab, refMean, refStdVar);
 		calculateMeanAndStdV(opeLab, opeMean, opeStdVar);
-		//cout << "debug2" << endl;
 		CImg<double> opeLabStar = subMean(opeLab, opeMean);
-		opeLabStar.display();
 		CImg<double> opeLabPrime = scaleDataPoint(opeLabStar, refStdVar, opeStdVar);
-		opeLabStar.display();
 		CImg<double> opeLabResult = addMean(opeLabPrime, refMean);
-		opeLabResult.display();
-		//cout << "debug3" << endl;
 		CImg<unsigned char> result = LabToRGB(opeLabResult);
-		result.display();
+		string resultName = "result";
+		resultName += i + ".bmp";
+		result.save(resultName.c_str());
 	}
 
 	CImg<double> RGBtoLab(const CImg<unsigned char>& inputImg) {
 		CImg<double> LMS = CImg<double>(inputImg.width(), inputImg.height(), 1, 3);
 		cimg_forXY(inputImg, x, y) {
-			LMS(x,y,0,0) = log10(0.3811 * inputImg(x,y,0,0) + 0.5783 * inputImg(x,y,0,1) + 0.0402 * inputImg(x,y,0,2));
-			LMS(x,y,0,1) = log10(0.1967 * inputImg(x,y,0,0) + 0.7244 * inputImg(x,y,0,1) + 0.0782 * inputImg(x,y,0,2));
-			LMS(x,y,0,2) = log10(0.0241 * inputImg(x,y,0,0) + 0.1228 * inputImg(x,y,0,1) + 0.8444 * inputImg(x,y,0,2));
+			LMS(x,y,0,0) = 0.3811 * inputImg(x,y,0,0) + 0.5783 * inputImg(x,y,0,1) + 0.0402 * inputImg(x,y,0,2);
+			LMS(x,y,0,1) = 0.1967 * inputImg(x,y,0,0) + 0.7244 * inputImg(x,y,0,1) + 0.0782 * inputImg(x,y,0,2);
+			LMS(x,y,0,2) = 0.0241 * inputImg(x,y,0,0) + 0.1228 * inputImg(x,y,0,1) + 0.8444 * inputImg(x,y,0,2);
+			if(LMS(x,y,0,0) == 0) LMS(x,y,0,0) = 1;
+			if(LMS(x,y,0,1) == 0) LMS(x,y,0,1) = 1;
+			if(LMS(x,y,0,2) == 0) LMS(x,y,0,2) = 1;
+			LMS(x,y,0,0) = log10(LMS(x,y,0,0));
+			LMS(x,y,0,1) = log10(LMS(x,y,0,1));
+			LMS(x,y,0,2) = log10(LMS(x,y,0,2));
 		}
 
 		CImg<double> lab = CImg<double>(inputImg.width(), inputImg.height(), 1, 3);
@@ -97,7 +98,6 @@ public:
 	}
 
 	void calculateMeanAndStdV(const CImg<double>& lab, double* mean, double* stdVar) {
-		//lab.display();
 		for(int i = 0; i < 3; i++) {
 			mean[i] = 0;
 			stdVar[i] = 0;
